@@ -46,11 +46,19 @@ void NumberingOf<T>::init(
 }
 
 template <class T>
-void NumberingOf<T>::init(Field* f)
+void NumberingOf<T>::init(Field* f, bool global)
 {
   field = f;
   std::string nm = f->getName();
+  if(global)
+    nm += "_global";
   nm += "_num";
+  // FIXME: Using this string here is a use after free error
+  // and will lead to undefined behavior since the string gets
+  // destructed at the end of the function, and so should the
+  // underlying c_string. We should allocate a string to the
+  // heap and properly take care of the destruction of the string
+  // in the field base
   init(nm.c_str(),
       f->getMesh(),
       f->getShape(),
@@ -123,8 +131,11 @@ Numbering* createNumbering(
 
 void destroyNumbering(Numbering* n)
 {
-  n->getMesh()->removeNumbering(n);
-  delete n;
+  if(n)
+  {
+    n->getMesh()->removeNumbering(n);
+    delete n;
+  }
 }
 
 void fix(Numbering* n, MeshEntity* e, int node, int component, bool fixed)
@@ -470,7 +481,7 @@ GlobalNumbering* createGlobalNumbering(
 GlobalNumbering* createGlobalNumbering(Field* f)
 {
   GlobalNumbering* n = new GlobalNumbering();
-  n->init(f);
+  n->init(f, true);
   f->getMesh()->addGlobalNumbering(n);
   return n;
 }
@@ -612,8 +623,11 @@ void synchronize(GlobalNumbering* n, Sharing* shr)
 
 void destroyGlobalNumbering(GlobalNumbering* n)
 {
-  n->getMesh()->removeGlobalNumbering(n);
-  delete n;
+  if(n)
+  {
+    n->getMesh()->removeGlobalNumbering(n);
+    delete n;
+  }
 }
 
 void getNodes(GlobalNumbering* n, DynamicArray<Node>& nodes)
