@@ -121,9 +121,8 @@ void Element::getNodeData()
 
 void Element::getElementNodeData(NewArray<double>& d)
 {
-  d.allocated() ? d.resize(nen) : d.allocate(nen);
-  for (int i = 0; i < nen; i++)
-    d[i] = nodeData[i];
+  d.resize(nodeData.size());
+  std::copy(&nodeData[0], (&nodeData[nodeData.size()-1])+1, &d[0]);
 }
 
 }//namespace apf
